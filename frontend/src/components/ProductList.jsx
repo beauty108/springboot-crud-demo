@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchProducts } from '../api/productApi';
+import { createProduct, fetchProducts, updateProduct } from '../api/productApi';
+import ProductForm from './ProductForm';
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -11,7 +12,11 @@ export default function ProductList() {
     const [direction, setDirection] = useState('asc');
     const [reload, setReload] = useState(0);
 
+    // The form: null = closed, { mode: 'create' } or { mode: 'edit', product }
+    const [editing, setEditing] = useState(null);
+    const [notice, setNotice] = useState('');
 
+    // The latest server result, tagged with the request it belongs to
     const [result, setResult] = useState({ key: null, data: null, error: null });
 
     const requestKey = `${page}|${size}|${sortBy}|${direction}|${reload}`;
@@ -42,10 +47,42 @@ export default function ProductList() {
     const changeDirection = (value) => { setDirection(value); setPage(0); };
     const changeSize = (value) => { setSize(Number(value)); setPage(0); };
 
+    const openCreateForm = () => { setNotice(''); setEditing({ mode: 'create' }); };
+    const openEditForm = (product) => { setNotice(''); setEditing({ mode: 'edit', product }); };
+    const closeForm = () => setEditing(null);
+
+    const handleSave = async (values) => {
+        if (editing.mode === 'create') {
+            await createProduct(values);
+            setSortBy('id');
+            setDirection('desc');
+            setPage(0);
+            setNotice('Product created.');
+        } else {
+            await updateProduct(editing.product.id, values);
+            setNotice(`Product ${editing.product.id} updated.`);
+        }
+        setEditing(null);
+        setReload((n) => n + 1); // refetch the list
+    };
+
     const { data, error } = result;
 
     return (
         <section>
+            {notice && <p className="notice">{notice}</p>}
+
+            {editing && (
+                <ProductForm
+                    key={editing.mode === 'edit' ? editing.product.id : 'new'}
+                    title={editing.mode === 'create' ? 'Add product' : `Edit product ${editing.product.id}`}
+                    initialValues={editing.mode === 'edit' ? editing.product : {}}
+                    submitLabel={editing.mode === 'create' ? 'Create' : 'Save changes'}
+                    onSubmit={handleSave}
+                    onCancel={closeForm}
+                />
+            )}
+
             <div className="toolbar">
                 <label>
                     Sort by
@@ -70,6 +107,9 @@ export default function ProductList() {
                         <option value="20">20</option>
                     </select>
                 </label>
+                <button className="primary push-right" onClick={openCreateForm} disabled={editing !== null}>
+                    + Add product
+                </button>
             </div>
 
             {loading && <p className="message">Loading products...</p>}
@@ -94,6 +134,7 @@ export default function ProductList() {
                             <th>Name</th>
                             <th>Description</th>
                             <th className="number">Price</th>
+                            <th>Actions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -103,6 +144,9 @@ export default function ProductList() {
                                 <td>{product.name}</td>
                                 <td>{product.description}</td>
                                 <td className="number">{currency.format(product.price)}</td>
+                                <td>
+                                    <button onClick={() => openEditForm(product)}>Edit</button>
+                                </td>
                             </tr>
                         ))}
                         </tbody>

@@ -12,6 +12,7 @@ h1 {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  align-items: flex-end;
   margin-bottom: 1rem;
 }
 
@@ -22,14 +23,28 @@ h1 {
   gap: 0.25rem;
 }
 
+.push-right {
+  margin-left: auto;
+}
+
 select,
+input,
 button {
   padding: 0.4rem 0.7rem;
   font-size: 0.95rem;
   border: 1px solid #c3c8d2;
   border-radius: 6px;
   background: #fff;
+}
+
+button {
   cursor: pointer;
+}
+
+button.primary {
+  background: #2b59c3;
+  border-color: #2b59c3;
+  color: #fff;
 }
 
 button:disabled {
@@ -79,4 +94,55 @@ th {
 .message.error {
   background: #fdecec;
   color: #8a1f1f;
+}
+
+.notice {
+  padding: 0.7rem 1rem;
+  background: #e8f6ec;
+  color: #1d6b34;
+  border-radius: 8px;
+}
+
+/* ---------- Add / Edit form ---------- */
+
+.form-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.form-panel h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.9rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.field-error {
+  color: #b42318;
+  font-size: 0.85rem;
+}
+
+.form-error {
+  color: #b42318;
+  background: #fdecec;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
 }
