@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { createProduct, fetchProducts, updateProduct } from '../api/productApi';
+import {
+    ApiError,
+    createProduct,
+    deleteProduct,
+    fetchProducts,
+    updateProduct,
+} from '../api/productApi';
+import ConfirmDialog from './ConfirmDialog';
 import ProductForm from './ProductForm';
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -12,11 +19,13 @@ export default function ProductList() {
     const [direction, setDirection] = useState('asc');
     const [reload, setReload] = useState(0);
 
-    // The form: null = closed, { mode: 'create' } or { mode: 'edit', product }
+
     const [editing, setEditing] = useState(null);
+
+    const [deleting, setDeleting] = useState(null);
     const [notice, setNotice] = useState('');
 
-    // The latest server result, tagged with the request it belongs to
+
     const [result, setResult] = useState({ key: null, data: null, error: null });
 
     const requestKey = `${page}|${size}|${sortBy}|${direction}|${reload}`;
@@ -51,6 +60,9 @@ export default function ProductList() {
     const openEditForm = (product) => { setNotice(''); setEditing({ mode: 'edit', product }); };
     const closeForm = () => setEditing(null);
 
+    const openDeleteDialog = (product) => { setNotice(''); setDeleting(product); };
+    const closeDeleteDialog = () => setDeleting(null);
+
     const handleSave = async (values) => {
         if (editing.mode === 'create') {
             await createProduct(values);
@@ -66,6 +78,35 @@ export default function ProductList() {
         setReload((n) => n + 1); // refetch the list
     };
 
+    const handleConfirmDelete = async () => {
+        const product = deleting;
+        try {
+            await deleteProduct(product.id);
+            setNotice(`Product ${product.id} deleted.`);
+        } catch (err) {
+
+            if (err instanceof ApiError && err.status === 404) {
+                setNotice(`Product ${product.id} was already deleted.`);
+            } else {
+                throw err;
+            }
+        }
+
+        setDeleting(null);
+
+
+        if (editing?.mode === 'edit' && editing.product.id === product.id) {
+            setEditing(null);
+        }
+
+
+        if (result.data && result.data.products.length === 1 && page > 0) {
+            setPage(page - 1);
+        } else {
+            setReload((n) => n + 1);
+        }
+    };
+
     const { data, error } = result;
 
     return (
@@ -74,12 +115,23 @@ export default function ProductList() {
 
             {editing && (
                 <ProductForm
+
                     key={editing.mode === 'edit' ? editing.product.id : 'new'}
                     title={editing.mode === 'create' ? 'Add product' : `Edit product ${editing.product.id}`}
                     initialValues={editing.mode === 'edit' ? editing.product : {}}
                     submitLabel={editing.mode === 'create' ? 'Create' : 'Save changes'}
                     onSubmit={handleSave}
                     onCancel={closeForm}
+                />
+            )}
+
+            {deleting && (
+                <ConfirmDialog
+                    title="Delete product?"
+                    message={`Are you sure you want to delete "${deleting.name}" (ID ${deleting.id})? This cannot be undone.`}
+                    confirmLabel="Delete"
+                    onConfirm={handleConfirmDelete}
+                    onCancel={closeDeleteDialog}
                 />
             )}
 
@@ -145,7 +197,12 @@ export default function ProductList() {
                                 <td>{product.description}</td>
                                 <td className="number">{currency.format(product.price)}</td>
                                 <td>
-                                    <button onClick={() => openEditForm(product)}>Edit</button>
+                                    <div className="row-actions">
+                                        <button onClick={() => openEditForm(product)}>Edit</button>
+                                        <button className="danger" onClick={() => openDeleteDialog(product)}>
+                                            Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

@@ -62,3 +62,8 @@ export async function updateProduct(id, product) {
     if (!response.ok) throw await toApiError(response);
     return response.json();
 }
+
+export async function deleteProduct(id) {
+    const response = await fetch(`${API_URL}/api/products/${id}`, { method: 'DELETE' });
+    if (!response.ok) throw await toApiError(response);
+}
