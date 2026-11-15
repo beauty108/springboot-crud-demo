@@ -35,14 +35,13 @@ class ProductIntegrationTest {
         productRepository.deleteAll();
     }
 
-
     private long createProductViaApi(String name, double price) throws Exception {
         String json = "{\"name\":\"" + name + "\",\"description\":\"desc\",\"price\":" + price + "}";
 
         MvcResult result = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         Number id = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
@@ -53,6 +52,7 @@ class ProductIntegrationTest {
     void createProduct_savesToDatabase() throws Exception {
         long id = createProductViaApi("Laptop", 999.99);
 
+        // Check the real database, not just the API response
         assertEquals(1, productRepository.count());
         assertEquals("Laptop", productRepository.findById(id).get().getName());
     }
@@ -113,15 +113,15 @@ class ProductIntegrationTest {
 
     @Test
     void fullCrudFlow_createReadUpdateDelete() throws Exception {
-        // CREATE
+
         long id = createProductViaApi("Laptop", 999.99);
 
-        // READ
+
         mockMvc.perform(get("/api/products/" + id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Laptop"));
 
-        // UPDATE
+
         mockMvc.perform(put("/api/products/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Updated\",\"description\":\"d\",\"price\":1.5}"))
@@ -131,7 +131,7 @@ class ProductIntegrationTest {
                 .andExpect(jsonPath("$.name").value("Updated"))
                 .andExpect(jsonPath("$.price").value(1.5));
 
-        // DELETE
+
         mockMvc.perform(delete("/api/products/" + id))
                 .andExpect(status().isNoContent());
 

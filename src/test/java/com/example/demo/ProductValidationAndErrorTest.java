@@ -91,13 +91,13 @@ class ProductValidationAndErrorTest {
     }
 
     @Test
-    void createProduct_returns200_whenInputIsValid() throws Exception {
+    void createProduct_returns201_whenInputIsValid() throws Exception {
         String json = "{\"name\":\"Laptop\",\"description\":\"desc\",\"price\":999.99}";
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Laptop"));
     }
 
@@ -111,7 +111,6 @@ class ProductValidationAndErrorTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.name").exists());
     }
-
 
 
     @Test
